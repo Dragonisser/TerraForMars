@@ -1,0 +1,45 @@
+{
+	"schemaVersion": 1,
+	"id": "terraformars",
+	"version": "${version}",
+	"name": "TerraForMars",
+	"description": "A mod about terraforming the world",
+	"authors": [
+		"Dragonissa"
+	],
+	"contact": {
+		"homepage": "https://github.com/Dragonisser/TerraForMars",
+		"sources": "https://github.com/Dragonisser/TerraForMars",
+		"issues": "https://github.com/Dragonisser/TerraForMars/issues"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/terraformars/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"de.prwh.terraformars.TerraForMars"
+		],
+		"client": [
+			"de.prwh.terraformars.TerraForMarsClient"
+		],
+		"fabric-datagen": [
+			"de.prwh.terraformars.datagen.TerraForMarsDataGenerator"
+		]
+	},
+	"mixins": [
+		"terraformars.mixins.json",
+		{
+			"config": "terraformars.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.10",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
