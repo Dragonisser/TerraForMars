@@ -22,6 +22,7 @@ public class TFMBlockEntities {
 
     public static void init() {
         PRODUCER_BLOCK_ENTITY_TYPE = register("producer_block_entity", EnergyProducerBlockEntity::new, TFMBlocks.SOLAR_GENERATOR);
+        CONSUMER_BLOCK_ENTITY_TYPE = register("consumer_block_entity", EnergyConsumerBlockEntity::new, TFMBlocks.TERRAFORMER);
     }
 
     private static <T extends BlockEntity> BlockEntityType<T> register(

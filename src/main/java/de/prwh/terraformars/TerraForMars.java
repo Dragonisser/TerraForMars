@@ -31,13 +31,13 @@ public class TerraForMars implements ModInitializer {
 	public static final RegistryKey<ItemGroup> BLOCK_GROUP_KEY = RegistryKey.of(Registries.ITEM_GROUP.getKey(), Identifier.of(MOD_ID, "item_group_blocks"));
 	public static final ItemGroup BLOCK_GROUP = FabricItemGroup.builder()
 			.icon(() -> new ItemStack(TFMBlocks.SOLAR_GENERATOR))
-			.displayName(Text.translatable("itemgroup" + MOD_ID + ".blocks"))
+			.displayName(Text.translatable("itemgroup." + MOD_ID + ".blocks"))
 			.build();
 
 	public static final RegistryKey<ItemGroup> ITEM_GROUP_KEY = RegistryKey.of(Registries.ITEM_GROUP.getKey(), Identifier.of(MOD_ID, "item_group_items"));
 	public static final ItemGroup ITEM_GROUP = FabricItemGroup.builder()
 			.icon(() -> new ItemStack(TFMBlocks.SOLAR_GENERATOR))
-			.displayName(Text.translatable("itemgroup" + MOD_ID + ".items"))
+			.displayName(Text.translatable("itemgroup." + MOD_ID + ".items"))
 			.build();
 
 	@Override
@@ -59,6 +59,4 @@ public class TerraForMars implements ModInitializer {
 			EnergyNetwork.saveToFile();
 		});
 	}
-
-
 }

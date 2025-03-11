@@ -1,6 +1,5 @@
 package de.prwh.terraformars.entity.blockentity;
 
-import de.prwh.terraformars.TerraForMars;
 import de.prwh.terraformars.energynetwork.interfaces.IEnergyConsumer;
 import de.prwh.terraformars.energynetwork.interfaces.IEnergyProducer;
 import net.minecraft.block.BlockState;
@@ -78,6 +77,6 @@ public class EnergyProducerBlockEntity extends EnergyBlockEntity implements IEne
 		}
 	}
 
-	public static void tick(World world, BlockPos blockPos, BlockState blockState, EnergyBlockEntity entity) {
+	public static void tick(World world, BlockPos blockPos, BlockState blockState, EnergyProducerBlockEntity entity) {
 	}
 }

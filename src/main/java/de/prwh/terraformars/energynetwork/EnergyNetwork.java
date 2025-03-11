@@ -5,9 +5,7 @@ import de.prwh.terraformars.energynetwork.interfaces.IEnergyConsumer;
 import de.prwh.terraformars.energynetwork.interfaces.IEnergyProducer;
 import de.prwh.terraformars.entity.blockentity.EnergyBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
@@ -37,8 +35,7 @@ import java.util.Map;
  * fact that its not guaranteed that the same EnergyNetwork object will be
  * returned at calls of different entities of said network. They are equal in
  * terms of content, but could be different objects. This is not the case right
- * now, but could change in the future. of different entities of said network.
- * This is the case right now, but could change in the future.
+ * now, but could change in the future.
  */
 /*
  * TODO: The performance could be improved by implementing a rebuild algorithm
@@ -51,6 +48,7 @@ public class EnergyNetwork {
 	 * object handling.
 	 */
 	private static class EnergyBlockEntityWrapper implements Serializable {
+		@Serial
 		private static final long serialVersionUID = 1L;
 
 		private String dimensionKeyString; // Could be better to use some kind of uid

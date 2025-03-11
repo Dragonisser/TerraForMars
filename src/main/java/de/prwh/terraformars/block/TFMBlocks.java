@@ -24,7 +24,7 @@ public class TFMBlocks {
 
     public static void init() {
         SOLAR_GENERATOR = register("solar_generator", SolarGeneratorBlock::new, AbstractBlock.Settings.create().sounds(BlockSoundGroup.METAL));
-        TERRAFORMER = register("terraformer", Block::new, AbstractBlock.Settings.create().sounds(BlockSoundGroup.METAL));
+        TERRAFORMER = register("terraformer", TerraformerBlock::new, AbstractBlock.Settings.create().sounds(BlockSoundGroup.METAL));
     }
 
     private static Block register(String name, Function<AbstractBlock.Settings, Block> blockFactory, AbstractBlock.Settings settings) {
@@ -33,7 +33,6 @@ public class TFMBlocks {
 
     private static Block register(String name, Function<AbstractBlock.Settings, Block> blockFactory, AbstractBlock.Settings settings, boolean addToItemGroup, boolean registerBlockItem) {
         RegistryKey<Block> blockKey = keyOfBlock(name);
-
         Block block = blockFactory.apply(settings.registryKey(blockKey));
 
         if (addToItemGroup) {
@@ -41,10 +40,9 @@ public class TFMBlocks {
         }
         if (registerBlockItem) {
             RegistryKey<Item> itemKey = keyOfItem(name);
-            BlockItem blockItem = new BlockItem(block, new Item.Settings().registryKey(itemKey));
+            BlockItem blockItem = new BlockItem(block, new Item.Settings().registryKey(itemKey).useBlockPrefixedTranslationKey());
             Registry.register(Registries.ITEM, itemKey, blockItem);
         }
-
         return Registry.register(Registries.BLOCK, blockKey, block);
     }
 

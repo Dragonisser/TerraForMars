@@ -4,7 +4,7 @@ import com.mojang.serialization.MapCodec;
 import de.prwh.terraformars.TerraForMars;
 import de.prwh.terraformars.energynetwork.EnergyNetwork;
 import de.prwh.terraformars.entity.blockentity.EnergyBlockEntity;
-import de.prwh.terraformars.entity.blockentity.EnergyProducerBlockEntity;
+import de.prwh.terraformars.entity.blockentity.EnergyConsumerBlockEntity;
 import de.prwh.terraformars.entity.blockentity.TFMBlockEntities;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
@@ -18,20 +18,19 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
-public class SolarGeneratorBlock extends EnergyBlock {
-
-    public SolarGeneratorBlock(Settings settings) {
+public class TerraformerBlock extends EnergyBlock {
+    public TerraformerBlock(Settings settings) {
         super(settings);
     }
 
     @Override
     protected MapCodec<? extends BlockWithEntity> getCodec() {
-        return createCodec(SolarGeneratorBlock::new);
+        return createCodec(TerraformerBlock::new);
     }
 
     @Override
     public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-        return new EnergyProducerBlockEntity(pos, state);
+        return new EnergyConsumerBlockEntity(pos, state);
     }
 
     @Override
@@ -50,6 +49,6 @@ public class SolarGeneratorBlock extends EnergyBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
-        return validateTicker(type, TFMBlockEntities.PRODUCER_BLOCK_ENTITY_TYPE, EnergyProducerBlockEntity::tick);
+        return validateTicker(type, TFMBlockEntities.CONSUMER_BLOCK_ENTITY_TYPE, EnergyConsumerBlockEntity::tick);
     }
 }

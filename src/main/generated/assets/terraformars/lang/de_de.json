@@ -1,4 +1,6 @@
 {
   "block.terraformars.solar_generator": "Solar Generator",
-  "block.terraformars.terraformer": "Terraformer"
+  "block.terraformars.terraformer": "Terraformer",
+  "itemgroup.terraformars.blocks": "TerraForMars Blöcke",
+  "itemgroup.terraformars.items": "TerraForMars Gegenstände"
 }

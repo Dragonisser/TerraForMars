@@ -4,7 +4,6 @@ import de.prwh.terraformars.energynetwork.EnergyNetwork;
 import de.prwh.terraformars.energynetwork.interfaces.IEnergyConsumer;
 import de.prwh.terraformars.energynetwork.interfaces.IEnergyProducer;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.math.BlockPos;
@@ -86,6 +85,6 @@ public class EnergyConsumerBlockEntity extends EnergyBlockEntity implements IEne
 		}
 	}
 
-	public static void tick(World world, BlockPos blockPos, BlockState blockState, EnergyBlockEntity entity) {
+	public static void tick(World world, BlockPos blockPos, BlockState blockState, EnergyConsumerBlockEntity entity) {
 	}
 }

@@ -6,6 +6,7 @@ import de.prwh.terraformars.energynetwork.interfaces.IEnergyProducer;
 import de.prwh.terraformars.energynetwork.interfaces.IEnergyStorage;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -108,7 +109,7 @@ public class EnergyStorageBlockEntity extends EnergyBlockEntity implements IEner
 		}
 	}
 
-	public void updateEntity() {
-		this.ifConnected();
+	public static void tick(World world, BlockPos blockPos, BlockState blockState, EnergyStorageBlockEntity entity) {
+		entity.ifConnected();
 	}
 }

@@ -1,5 +1,6 @@
 package de.prwh.terraformars.datagen;
 
+import de.prwh.terraformars.TerraForMars;
 import de.prwh.terraformars.block.TFMBlocks;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
@@ -17,5 +18,7 @@ public class TerraForMarsEnglishLangProvider extends FabricLanguageProvider {
     public void generateTranslations(RegistryWrapper.WrapperLookup wrapperLookup, TranslationBuilder translationBuilder) {
         translationBuilder.add(TFMBlocks.SOLAR_GENERATOR, "Solar Generator");
         translationBuilder.add(TFMBlocks.TERRAFORMER, "Terraformer");
+        translationBuilder.add(TerraForMars.BLOCK_GROUP_KEY, "TerraForMars Blöcke");
+        translationBuilder.add(TerraForMars.ITEM_GROUP_KEY, "TerraForMars Gegenstände");
     }
 }
