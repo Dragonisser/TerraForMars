@@ -23,7 +23,7 @@ public class TFMBlocks {
     private TFMBlocks() {}
 
     public static void init() {
-        SOLAR_GENERATOR = register("solar_generator", Block::new, AbstractBlock.Settings.create().sounds(BlockSoundGroup.METAL));
+        SOLAR_GENERATOR = register("solar_generator", SolarGeneratorBlock::new, AbstractBlock.Settings.create().sounds(BlockSoundGroup.METAL));
         TERRAFORMER = register("terraformer", Block::new, AbstractBlock.Settings.create().sounds(BlockSoundGroup.METAL));
     }
 
