@@ -17,10 +17,8 @@ import org.jgrapht.graph.SimpleGraph;
 import org.jgrapht.traverse.ClosestFirstIterator;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of a connected network of energy entities. <br>
@@ -31,8 +29,8 @@ import java.util.Map;
  * <p>
  * Note that EnergyNetwork objects are like a snapshot, if you add or remove a
  * {@link EnergyBlockEntity} from them, the network object won't get updated and
- * is unsynchronized to further instances of the network. Also noteworthy is the
- * fact that its not guaranteed that the same EnergyNetwork object will be
+ * is unsynchronized to further instances of the network. Also, noteworthy is the
+ * fact that it's not guaranteed that the same EnergyNetwork object will be
  * returned at calls of different entities of said network. They are equal in
  * terms of content, but could be different objects. This is not the case right
  * now, but could change in the future.
@@ -51,21 +49,19 @@ public class EnergyNetwork {
 		@Serial
 		private static final long serialVersionUID = 1L;
 
-		private String dimensionKeyString; // Could be better to use some kind of uid
-		private int x, y, z;
+		private final String dimensionKeyString; // Could be better to use some kind of uid
+		private final int x, y, z;
 
 		public EnergyBlockEntityWrapper(EnergyBlockEntity te) {
-			this.dimensionKeyString = te.getWorld().getRegistryKey().getValue().toString();
+			this.dimensionKeyString = Objects.requireNonNull(te.getWorld()).getRegistryKey().getValue().toString();
 			this.x = te.getPos().getX();
 			this.y = te.getPos().getY();
 			this.z = te.getPos().getZ();
 		}
 
 		public EnergyBlockEntity getTileEntity(MinecraftServer server) {
-			TerraForMars.LOGGER.info("dimensionKeyString {}",dimensionKeyString);
 			RegistryKey<World> dimensionKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(dimensionKeyString));
-			TerraForMars.LOGGER.info("dimensionKey {}", dimensionKey.getValue().toString());
-			return (EnergyBlockEntity) server.getWorld(dimensionKey).getBlockEntity(new BlockPos(x, y, z));
+			return (EnergyBlockEntity) Objects.requireNonNull(server.getWorld(dimensionKey)).getBlockEntity(new BlockPos(x, y, z));
 		}
 
 		@Override
@@ -99,7 +95,7 @@ public class EnergyNetwork {
 	}
 
 	private static Graph<EnergyBlockEntityWrapper, DefaultEdge> networkGraph = new SimpleGraph<>(DefaultEdge.class);
-	private static Map<EnergyBlockEntity, EnergyNetwork> cache = new HashMap<>();
+	private static final Map<EnergyBlockEntity, EnergyNetwork> cache = new HashMap<>();
 	private static File saveFile;
 
 	private static final int[][] searchOffsets = new int[][] {
@@ -111,9 +107,9 @@ public class EnergyNetwork {
 			new int[] { 0, 0, -1 }
 	};
 
-	private List<EnergyBlockEntity> entities = new ArrayList<EnergyBlockEntity>();
-	private List<IEnergyConsumer> consumer = new ArrayList<IEnergyConsumer>();
-	private List<IEnergyProducer> producer = new ArrayList<IEnergyProducer>();
+	private final List<EnergyBlockEntity> entities = new ArrayList<>();
+	private final List<IEnergyConsumer> consumer = new ArrayList<>();
+	private final List<IEnergyProducer> producer = new ArrayList<>();
 
 	private EnergyNetwork() {
 	}
@@ -140,30 +136,94 @@ public class EnergyNetwork {
 		return producer;
 	}
 
+
 	public static void onEntityAdd(EnergyBlockEntity te) {
 		EnergyBlockEntityWrapper entityWrapper = new EnergyBlockEntityWrapper(te);
 		networkGraph.addVertex(entityWrapper);
+
+		Set<EnergyNetwork> adjacentNetworks = new HashSet<>();
+
 		for (int[] offset : searchOffsets) {
-			BlockEntity other = te.getWorld().getBlockEntity(new BlockPos(te.getPos().getX() + offset[0], te.getPos().getY() + offset[1], te.getPos().getZ() + offset[2]));
+			BlockEntity other = Objects.requireNonNull(te.getWorld()).getBlockEntity(new BlockPos(te.getPos().getX() + offset[0], te.getPos().getY() + offset[1], te.getPos().getZ() + offset[2]));
 			if (!(other instanceof EnergyBlockEntity))
 				continue;
 
 			EnergyBlockEntityWrapper entityWrapperOther = new EnergyBlockEntityWrapper((EnergyBlockEntity) other);
 			networkGraph.addEdge(entityWrapper, entityWrapperOther);
-		}
-		cache.clear();
 
-		EnergyNetwork network = getNetwork(te);
-		if (network == null) {
-			// Handle the case where no network is found (e.g., log an error or return early)
-			return;
-		}
-        if (!network.entities.isEmpty()) {
-			for (EnergyBlockEntity energyBlockEntity : network.getEntities()) {
-				energyBlockEntity.onNetworkEntityAdd(network, te);
+			// Collect the network of the adjacent block
+			EnergyNetwork neighborNetwork = getNetwork((EnergyBlockEntity) other);
+			if (neighborNetwork != null) {
+				adjacentNetworks.add(neighborNetwork);
 			}
 		}
+
+		// Merge all found networks into a single network
+		EnergyNetwork mergedNetwork;
+		if (adjacentNetworks.isEmpty()) {
+			mergedNetwork = new EnergyNetwork(); // Create new network if no neighbors
+		} else {
+			mergedNetwork = adjacentNetworks.iterator().next(); // Use one existing network
+			for (EnergyNetwork network : adjacentNetworks) {
+				if (network != mergedNetwork) {
+					mergedNetwork.merge(network); // Merge other networks into the first one
+				}
+			}
+		}
+
+		// Add the new entity to the merged network
+		mergedNetwork.addEntity(te);
+		cache.put(te, mergedNetwork);
+		//cache.clear();
+
+		// Notify all entities in the network
+		for (EnergyBlockEntity energyBlockEntity : mergedNetwork.getEntities()) {
+			energyBlockEntity.onNetworkEntityApplied(mergedNetwork, te);
+		}
 	}
+
+	public void merge(EnergyNetwork other) {
+		if (other == this) return; // Prevent self-merge
+
+		// Move all entities from 'other' to 'this'
+		for (EnergyBlockEntity entity : other.getEntities()) {
+			this.addEntity(entity);
+			entity.onNetworkEntityApplied(this, entity); // Notify block of new network
+		}
+
+		// Remove all block entities of 'other' from cache before merging
+		other.getEntities().forEach(EnergyNetwork.cache::remove);
+
+		// Ensure 'other' is completely removed
+		EnergyNetwork.cache.values().removeIf(network -> network == other);
+	}
+
+//	public static void onEntityAdd(EnergyBlockEntity te) {
+//		EnergyBlockEntityWrapper entityWrapper = new EnergyBlockEntityWrapper(te);
+//		networkGraph.addVertex(entityWrapper);
+//		for (int[] offset : searchOffsets) {
+//			BlockEntity other = te.getWorld().getBlockEntity(new BlockPos(te.getPos().getX() + offset[0], te.getPos().getY() + offset[1], te.getPos().getZ() + offset[2]));
+//			if (!(other instanceof EnergyBlockEntity))
+//				continue;
+//
+//			EnergyBlockEntityWrapper entityWrapperOther = new EnergyBlockEntityWrapper((EnergyBlockEntity) other);
+//			networkGraph.addEdge(entityWrapper, entityWrapperOther);
+//		}
+//		cache.clear();
+//
+//		EnergyNetwork network = getNetwork(te);
+//		if (network == null) {
+//			// Handle the case where no network is found (e.g., log an error or return early)
+//			return;
+//		}
+//        if (!network.entities.isEmpty()) {
+//			for (EnergyBlockEntity energyBlockEntity : network.getEntities()) {
+//				energyBlockEntity.onNetworkEntityApplied(network, te);
+//			}
+//		}
+//	}
+
+
 
 	public static void onEntityRemove(EnergyBlockEntity te) {
 		networkGraph.removeVertex(new EnergyBlockEntityWrapper(te));
@@ -172,8 +232,7 @@ public class EnergyNetwork {
 
 	public static EnergyNetwork getNetwork(EnergyBlockEntity energyBlockEntity) {
 
-		MinecraftServer server = energyBlockEntity.getWorld().getServer();
-		TerraForMars.LOGGER.info("server {}", server);
+		MinecraftServer server = Objects.requireNonNull(energyBlockEntity.getWorld()).getServer();
 		if (server == null) {
 			return null; // Server is unavailable
 		}
@@ -193,7 +252,7 @@ public class EnergyNetwork {
 
 		EnergyBlockEntityWrapper entityWrapper = new EnergyBlockEntityWrapper(energyBlockEntity);
 		if (!networkGraph.containsVertex(entityWrapper)) {
-			TerraForMars.LOGGER.error("EnergyBlockEntityWrapper not found in networkGraph for entity: " + energyBlockEntity);
+			TerraForMars.LOGGER.error("EnergyBlockEntityWrapper not found in networkGraph for entity: {}", energyBlockEntity);
 			return new EnergyNetwork();
 		}
 
@@ -202,10 +261,13 @@ public class EnergyNetwork {
 		EnergyNetwork network = new EnergyNetwork();
 
 		while (iterator.hasNext()) {
-			EnergyBlockEntityWrapper member = iterator.next();
+ 			EnergyBlockEntityWrapper member = iterator.next();
 			EnergyBlockEntity memberEntity = member.getTileEntity(server);
 			network.addEntity(memberEntity);
-			TerraForMars.LOGGER.info("Added entity to network: " + memberEntity);
+			if (!memberEntity.equals(energyBlockEntity)) {
+				cache.put(memberEntity, network);
+				TerraForMars.LOGGER.info("Reconstructing network cache from networkgraph: {}", memberEntity);
+			}
 		}
 		cache.put(energyBlockEntity, network);
 		return network;
@@ -226,10 +288,10 @@ public class EnergyNetwork {
 			return;
 
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(saveFile))) {
+			TerraForMars.LOGGER.info("Trying to parse data");
 			networkGraph = (Graph<EnergyBlockEntityWrapper, DefaultEdge>) ois.readObject();
-			TerraForMars.LOGGER.info("trying to parse data {}", networkGraph);
 		} catch (IOException | ClassNotFoundException | ClassCastException e) {
-			throw new RuntimeException("Could not load Energynetwork graph from file", e);
+			throw new RuntimeException("Could not load EnergyNetwork graph from file", e);
 		}
 	}
 
@@ -239,21 +301,57 @@ public class EnergyNetwork {
 			throw new IllegalStateException("File must be specified before saving");
 
 		try {
-			if (!saveFile.exists())
-				saveFile.createNewFile();
-
+			if (!saveFile.exists()) {
+				boolean result = saveFile.createNewFile();
+				TerraForMars.LOGGER.debug("Save file success: {}",result);
+			}
 			try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(saveFile))) {
 				oos.writeObject(networkGraph);
 			}
 		} catch (IOException e) {
-			throw new RuntimeException("Could not save Energynetwork graph to file", e);
+			throw new RuntimeException("Could not save EnergyNetwork graph to file", e);
 		}
 	}
 
 	@Override
 	public String toString() {
-		return "EnergyNetwork {\n" + "  Entities (" + entities.size() + "): " + entities.toString() + "\n" + "  Consumer (" + consumer.size() + "): "
-				+ consumer.toString() + "\n" + "  Producer (" + producer.size() + "): " + producer.toString() + "}\n";
+		return "EnergyNetwork@" + this.hashCode() + "{\n" +
+				"  Entities (" + entities.size() + "):\n" + formatList(entities) + "\n" +
+				"  Consumer (" + consumer.size() + "):\n" + formatList(consumer) + "\n" +
+				"  Producer (" + producer.size() + "):\n" + formatList(producer) + "\n" +
+				"  Cache (\n" + formatCache() + "  )\n}";
 	}
 
+	// Helper method to format lists with new lines and indentation
+	private String formatList(List<?> list) {
+		return list.stream()
+				.map(obj -> "    { " + obj.getClass().getSimpleName() + "@" +
+						Integer.toHexString(System.identityHashCode(obj)) + " }")
+				.reduce((a, b) -> a + "\n" + b)
+				.orElse("    Empty");
+	}
+
+	// Helper method to format cache with new lines and indentation
+	private String formatCache() {
+		// Group the entries by NetworkHash
+		Map<Integer, List<String>> groupedCache = cache.entrySet().stream()
+				.sorted((entry1, entry2) -> Integer.compare(entry1.getValue().hashCode(), entry2.getValue().hashCode())) // Sort by NetworkHash
+				.collect(Collectors.groupingBy(
+						entry -> entry.getValue().hashCode(),
+						LinkedHashMap::new, // Maintain insertion order
+						Collectors.mapping(entry -> "        { BlockEntity: " + entry.getKey().getClass().getSimpleName() + "@" +
+								Integer.toHexString(System.identityHashCode(entry.getKey())) +
+								", NetworkHash: " + entry.getValue().hashCode() + " }", Collectors.toList())
+				));
+
+		// Format grouped cache with [] around BlockEntities with the same NetworkHash
+		StringBuilder sb = new StringBuilder();
+		groupedCache.forEach((networkHash, entries) -> {
+			sb.append("    [\n");
+			entries.forEach(entry -> sb.append(entry).append("\n"));
+			sb.append("    ]\n");
+		});
+
+		return sb.toString().isEmpty() ? "    Empty" : sb.toString();
+	}
 }

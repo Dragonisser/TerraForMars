@@ -20,33 +20,24 @@ public abstract class EnergyBlockEntity extends BlockEntity {
         super(type, pos, state);
     }
 
-    private int clicks = 0;
-    public int getClicks() {
-        return clicks;
-    }
-
-    public void incrementClicks() {
-        clicks++;
-        markDirty();
-    }
-
     @Override
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        nbt.putInt("clicks", clicks);
-
         super.writeNbt(nbt, registryLookup);
     }
 
     @Override
     protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
         super.readNbt(nbt, registryLookup);
-
-        clicks = nbt.getInt("clicks");
     }
 
-    public void onNetworkEntityAdd(EnergyNetwork network, EnergyBlockEntity change) {
+    public void onNetworkEntityApplied(EnergyNetwork network, EnergyBlockEntity change) {
     }
 
     public static void tick(World world, BlockPos blockPos, BlockState blockState, EnergyBlockEntity entity) {
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(this));
     }
 }

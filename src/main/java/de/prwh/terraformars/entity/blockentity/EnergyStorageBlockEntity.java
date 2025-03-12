@@ -10,7 +10,7 @@ import net.minecraft.world.World;
 
 import java.util.List;
 
-public class EnergyStorageBlockEntity extends EnergyBlockEntity implements IEnergyStorage {
+public abstract class EnergyStorageBlockEntity extends EnergyBlockEntity implements IEnergyStorage {
 
 	public EnergyStorageBlockEntity(BlockPos pos, BlockState state) {
 		super(TFMBlockEntities.STORAGE_BLOCK_ENTITY_TYPE, pos, state);
@@ -69,17 +69,19 @@ public class EnergyStorageBlockEntity extends EnergyBlockEntity implements IEner
 	public void addEnergy(int energy) {
 		if (this.getEnergyStored() < this.getEnergyStoredMax() && (this.getEnergyStored() + energy) <= this.getEnergyStoredMax()) {
 			this.setEnergyStored(this.getEnergyStored() + energy);
+			markDirty();
 		}
 	}
 
 	public void removeEnergy(int energy) {
 		if (this.getEnergyStored() > 0 && (this.getEnergyStored() - energy) >= 0) {
 			this.setEnergyStored(this.getEnergyStored() - energy);
+			markDirty();
 		}
 	}
 
 	public void ifConnected() {
-		if (!this.world.isClient) {
+		if (!(this.world != null && this.world.isClient)) {
 			if (EnergyNetwork.getNetwork(this) != null) {
 				List<IEnergyProducer> producers = EnergyNetwork.getNetwork(this).getProducer();
 
@@ -88,6 +90,7 @@ public class EnergyStorageBlockEntity extends EnergyBlockEntity implements IEner
 						if (pro.getEnergyStored() > 0) {
 							if (this.getEnergyStored() + pro.getEnergyOutput() <= this.getEnergyStoredMax()) {
 								this.addEnergy(pro.transferEnergy());
+								markDirty();
 							}
 						}
 					}
@@ -99,11 +102,13 @@ public class EnergyStorageBlockEntity extends EnergyBlockEntity implements IEner
 	public int transferEnergy() {
 		if (this.getEnergyStored() >= this.getEnergyOutput()) {
 			this.removeEnergy(this.getEnergyOutput());
+			markDirty();
 			return this.getEnergyOutput();
-		} else if (this.getEnergyStored() < this.getEnergyOutput() && this.getEnergyStored() - this.getEnergyOutput() >= 0) {
-			this.removeEnergy(this.getEnergyOutput() / 2);
-			return this.getEnergyOutput() / 2;
-
+		} else if (this.getEnergyStored() > 0) { // Simplified condition
+			int transferred = Math.min(this.getEnergyStored(), this.getEnergyOutput() / 2);
+			this.removeEnergy(transferred);
+			markDirty();
+			return transferred;
 		} else {
 			return 0;
 		}

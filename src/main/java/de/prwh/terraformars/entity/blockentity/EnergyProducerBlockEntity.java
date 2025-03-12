@@ -1,15 +1,17 @@
 package de.prwh.terraformars.entity.blockentity;
 
+import de.prwh.terraformars.TerraForMars;
 import de.prwh.terraformars.energynetwork.interfaces.IEnergyConsumer;
 import de.prwh.terraformars.energynetwork.interfaces.IEnergyProducer;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-public class EnergyProducerBlockEntity extends EnergyBlockEntity implements IEnergyProducer {
+public abstract class EnergyProducerBlockEntity extends EnergyBlockEntity implements IEnergyProducer {
 
-	public EnergyProducerBlockEntity(BlockPos pos, BlockState state) {
-		super(TFMBlockEntities.PRODUCER_BLOCK_ENTITY_TYPE, pos, state);
+	public EnergyProducerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+		super(type, pos, state);
 	}
 
 	@Override
@@ -55,28 +57,36 @@ public class EnergyProducerBlockEntity extends EnergyBlockEntity implements IEne
 	public void addEnergy(int energy) {
 		if (this.getEnergyStored() < this.getEnergyStoredMax() && (this.getEnergyStored() + energy) <= this.getEnergyStoredMax()) {
 			this.setEnergyStored(this.getEnergyStored() + energy);
+			markDirty();
 		}
 	}
 
 	public void removeEnergy(int energy) {
 		if (this.getEnergyStored() > 0 && (this.getEnergyStored() - energy) >= 0) {
 			this.setEnergyStored(this.getEnergyStored() - energy);
+			markDirty();
 		}
 	}
 
 	public int transferEnergy() {
 		if (this.getEnergyStored() >= this.getEnergyOutput()) {
 			this.removeEnergy(this.getEnergyOutput());
+			markDirty();
 			return this.getEnergyOutput();
-		} else if (this.getEnergyStored() < this.getEnergyOutput() && this.getEnergyStored() - this.getEnergyOutput() >= 0) {
-			this.removeEnergy(this.getEnergyOutput() / 2);
-			return this.getEnergyOutput() / 2;
-
+		} else if (this.getEnergyStored() > 0) { // Simplified condition
+			int transferred = Math.min(this.getEnergyStored(), this.getEnergyOutput() / 2);
+			this.removeEnergy(transferred);
+			markDirty();
+			return transferred;
 		} else {
 			return 0;
 		}
 	}
 
-	public static void tick(World world, BlockPos blockPos, BlockState blockState, EnergyProducerBlockEntity entity) {
+	public void tickEntity(World world, BlockPos blockPos, BlockState blockState, EnergyProducerBlockEntity entity) {
+		if (world.getTime() % world.getTickManager().getTickRate() == 0) {
+			entity.addEnergy(entity.getEnergyProduce());
+			//TerraForMars.LOGGER.info("Producer {}", world.getDimensionEntry().toString());
+		}
 	}
 }

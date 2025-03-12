@@ -6,6 +6,7 @@ import de.prwh.terraformars.energynetwork.EnergyNetwork;
 import de.prwh.terraformars.entity.blockentity.EnergyBlockEntity;
 import de.prwh.terraformars.entity.blockentity.EnergyConsumerBlockEntity;
 import de.prwh.terraformars.entity.blockentity.TFMBlockEntities;
+import de.prwh.terraformars.entity.blockentity.consumer.TerraformerBlockEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.entity.BlockEntity;
@@ -30,18 +31,18 @@ public class TerraformerBlock extends EnergyBlock {
 
     @Override
     public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-        return new EnergyConsumerBlockEntity(pos, state);
+        return new TerraformerBlockEntity(pos, state);
     }
 
     @Override
     protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        if (!(world.getBlockEntity(pos) instanceof EnergyBlockEntity energyBlockEntity)) {
+        if (!(world.getBlockEntity(pos) instanceof TerraformerBlockEntity entity)) {
             return super.onUse(state, world, pos, player, hit);
         }
-        if (!world.isClient) {
-            TerraForMars.LOGGER.info(EnergyNetwork.getNetwork(energyBlockEntity).toString());
+
+        if(!world.isClient) {
+            TerraForMars.LOGGER.info("{}", EnergyNetwork.getNetwork(entity));
         }
-        TerraForMars.LOGGER.info("dimension id {}", world.getDimensionEntry().getIdAsString());
 
         return ActionResult.SUCCESS;
     }
@@ -49,6 +50,6 @@ public class TerraformerBlock extends EnergyBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
-        return validateTicker(type, TFMBlockEntities.CONSUMER_BLOCK_ENTITY_TYPE, EnergyConsumerBlockEntity::tick);
+        return validateTicker(type, TFMBlockEntities.TERRAFORMER_TYPE, TerraformerBlockEntity::tick);
     }
 }

@@ -33,16 +33,21 @@ public abstract class EnergyBlock extends BlockWithEntity {
     public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
         super.onPlaced(world, pos, state, placer, itemStack);
 
-        EnergyBlockEntity energyBlockEntity = (EnergyBlockEntity) world.getBlockEntity(pos);
-        EnergyNetwork.onEntityAdd(energyBlockEntity);
+        if (!world.isClient) {
+            EnergyBlockEntity energyBlockEntity = (EnergyBlockEntity) world.getBlockEntity(pos);
+            EnergyNetwork.onEntityAdd(energyBlockEntity);
+        }
     }
 
     @Override
     public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         super.onBreak(world, pos, state, player);
 
-        EnergyBlockEntity energyBlockEntity = (EnergyBlockEntity) world.getBlockEntity(pos);
-        EnergyNetwork.onEntityRemove(energyBlockEntity);
+        if (!world.isClient) {
+            EnergyBlockEntity energyBlockEntity = (EnergyBlockEntity) world.getBlockEntity(pos);
+            EnergyNetwork.onEntityRemove(energyBlockEntity);
+        }
+
         return state;
     }
 }

@@ -6,6 +6,8 @@ import de.prwh.terraformars.energynetwork.EnergyNetwork;
 import de.prwh.terraformars.entity.blockentity.EnergyBlockEntity;
 import de.prwh.terraformars.entity.blockentity.EnergyProducerBlockEntity;
 import de.prwh.terraformars.entity.blockentity.TFMBlockEntities;
+import de.prwh.terraformars.entity.blockentity.consumer.TerraformerBlockEntity;
+import de.prwh.terraformars.entity.blockentity.producer.SolarGeneratorBlockEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.entity.BlockEntity;
@@ -31,18 +33,18 @@ public class SolarGeneratorBlock extends EnergyBlock {
 
     @Override
     public @Nullable BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-        return new EnergyProducerBlockEntity(pos, state);
+        return new SolarGeneratorBlockEntity(pos, state);
     }
 
     @Override
     protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        if (!(world.getBlockEntity(pos) instanceof EnergyBlockEntity energyBlockEntity)) {
+        if (!(world.getBlockEntity(pos) instanceof SolarGeneratorBlockEntity entity)) {
             return super.onUse(state, world, pos, player, hit);
         }
-        if (!world.isClient) {
-            TerraForMars.LOGGER.info(EnergyNetwork.getNetwork(energyBlockEntity).toString());
+
+        if(!world.isClient) {
+            TerraForMars.LOGGER.info("{}", EnergyNetwork.getNetwork(entity));
         }
-        TerraForMars.LOGGER.info("dimension id {}", world.getDimensionEntry().getIdAsString());
 
         return ActionResult.SUCCESS;
     }
@@ -50,6 +52,6 @@ public class SolarGeneratorBlock extends EnergyBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
-        return validateTicker(type, TFMBlockEntities.PRODUCER_BLOCK_ENTITY_TYPE, EnergyProducerBlockEntity::tick);
+        return validateTicker(type, TFMBlockEntities.SOLAR_GENERATOR_TYPE, SolarGeneratorBlockEntity::tick);
     }
 }
